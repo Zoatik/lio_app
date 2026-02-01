@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import '../data/quizzs_repository.dart';
 import '../models/progress.dart';
 import '../models/quizz.dart';
+import '../storage/age_gate_storage.dart';
+import '../storage/credentials_storage.dart';
 import '../storage/progress_storage.dart';
 import '../storage/tutorial_storage.dart';
+import 'home_screen.dart';
 import 'booster_screen.dart';
 import 'inventory_screen.dart';
 import 'quiz_screen.dart';
@@ -119,6 +122,21 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(
         title: const Text('Parcours'),
         actions: [
+          IconButton(
+            tooltip: 'Deconnexion',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await const CredentialsStorage().clear();
+              await const AgeGateStorage().setVerified(false);
+              if (!context.mounted) {
+                return;
+              }
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+                (_) => false,
+              );
+            },
+          ),
           _InventoryButton(
             highlight: _showTutorial && _tutorialStep == 0,
             onPressed: () {
