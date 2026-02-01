@@ -34,18 +34,29 @@ class MyApp extends StatelessWidget {
 class _Bootstrapper extends StatelessWidget {
   const _Bootstrapper();
 
+  Future<(bool, bool)> _loadState() async {
+    final verified = await const AgeGateStorage().isVerified();
+    final creds = await const CredentialsStorage().load();
+    return (verified, creds != null);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: const AgeGateStorage().isVerified(),
+    return FutureBuilder<(bool, bool)>(
+      future: _loadState(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        final verified = snapshot.data ?? false;
-        return verified ? const MapScreen() : const HomeScreen();
+        final data = snapshot.data ?? (false, false);
+        final verified = data.$1;
+        final hasCreds = data.$2;
+        if (!hasCreds) {
+          return const HomeScreen();
+        }
+        return verified ? const MapScreen() : const RegisterScreen();
       },
     );
   }

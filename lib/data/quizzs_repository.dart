@@ -28,14 +28,19 @@ class QuizzsRepository {
         username: user,
         appPassword: pass,
       );
-      return Future.wait(
-        quizzs.map((quizz) => _attachRemoteMedia(quizz, client)),
-      );
+      final result = <Quizz>[];
+      for (final quizz in quizzs) {
+        try {
+          result.add(await _attachRemoteMedia(quizz, client));
+        } catch (_) {
+          result.add(quizz);
+        }
+        await Future.delayed(const Duration(milliseconds: 120));
+      }
+      return result;
     }
 
-    final manifest = await _loadAssetManifest();
-    final normalized = manifest.map((path) => path.replaceAll('\\', '/')).toList();
-    return quizzs.map((quizz) => _ensureRewardMedia(quizz, normalized)).toList();
+    return _fallbackLocal(quizzs);
   }
 
   Future<List<String>> _loadAssetManifest() async {
@@ -45,6 +50,12 @@ class QuizzsRepository {
     } catch (_) {
       return [];
     }
+  }
+
+  Future<List<Quizz>> _fallbackLocal(List<Quizz> quizzs) async {
+    final manifest = await _loadAssetManifest();
+    final normalized = manifest.map((path) => path.replaceAll('\\', '/')).toList();
+    return quizzs.map((quizz) => _ensureRewardMedia(quizz, normalized)).toList();
   }
 
   Quizz _ensureRewardMedia(

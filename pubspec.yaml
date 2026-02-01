@@ -71,30 +71,6 @@ flutter:
   assets:
     - assets/data/quizzs.json
     - assets/icon/app_icon.png
-    - quizz_images/
-    - quizz_images/quizz0/
-    - quizz_images/quizz1/
-    - quizz_images/quizz2/
-    - quizz_images/quizz3/
-    - quizz_images/quizz4/
-    - quizz_images/quizz5/
-    - quizz_images/quizz6/
-    - quizz_images/quizz7/
-    - quizz_images/quizz8/
-    - quizz_images/quizz9/
-    - quizz_images/quizz10/
-    - medias/
-    - medias/quizz0/
-    - medias/quizz1/
-    - medias/quizz2/
-    - medias/quizz3/
-    - medias/quizz4/
-    - medias/quizz5/
-    - medias/quizz6/
-    - medias/quizz7/
-    - medias/quizz8/
-    - medias/quizz9/
-    - medias/quizz10/
 
 flutter_icons:
   android: true
