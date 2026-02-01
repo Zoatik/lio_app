@@ -1,8 +1,13 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../data/quizzs_repository.dart';
 import '../models/progress.dart';
 import '../models/reward_media.dart';
+import '../services/web_download.dart';
 import '../storage/progress_storage.dart';
 import '../storage/credentials_storage.dart';
 import 'media_viewer_screen.dart';
@@ -130,6 +135,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       ),
                     ),
                   ),
+                  if (unlocked)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: _DownloadButton(
+                        onPressed: () => _downloadMedia(item),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -176,8 +189,87 @@ class _InventoryScreenState extends State<InventoryScreen> {
       errorBuilder: (_, __, ___) => placeholder,
     );
   }
+
+  Future<void> _downloadMedia(RewardMedia media) async {
+    if (!kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Telechargement web uniquement.')),
+      );
+      return;
+    }
+    final path = media.path;
+    if (!path.startsWith('http')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Media non disponible en ligne.')),
+      );
+      return;
+    }
+    try {
+      final headers = const CredentialsStorage().authHeadersSync();
+      final dio = Dio();
+      final response = await dio.get<List<int>>(
+        path,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: headers,
+        ),
+      );
+      final bytes = response.data;
+      if (bytes == null) {
+        throw Exception('Aucun contenu.');
+      }
+      final filename = _filenameForMedia(media);
+      await downloadBytes(
+        Uint8List.fromList(bytes),
+        filename: filename,
+        mimeType: media.type == RewardMediaType.video
+            ? 'video/mp4'
+            : 'image/jpeg',
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Echec du telechargement.')),
+      );
+    }
+  }
+
+  String _filenameForMedia(RewardMedia media) {
+    if (media.path.startsWith('http')) {
+      final uri = Uri.parse(media.path);
+      final name = uri.pathSegments.isNotEmpty
+          ? uri.pathSegments.last
+          : media.id;
+      return name.isEmpty ? media.id : name;
+    }
+    final parts = media.path.split('/');
+    return parts.isNotEmpty ? parts.last : media.id;
+  }
 }
 
 extension _FirstOrNull<T> on Iterable<T> {
   T? get firstOrNull => isEmpty ? null : first;
+}
+
+class _DownloadButton extends StatelessWidget {
+  const _DownloadButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: const Icon(Icons.download, color: Colors.white, size: 18),
+        tooltip: 'Telecharger',
+      ),
+    );
+  }
 }
