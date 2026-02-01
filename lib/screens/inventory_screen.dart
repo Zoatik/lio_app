@@ -153,12 +153,22 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   bool _isImagePath(String path) {
-    final lower = path.toLowerCase();
+    final lower = _normalizePathForCheck(path);
     return lower.endsWith('.jpg') ||
         lower.endsWith('.jpeg') ||
         lower.endsWith('.png') ||
         lower.endsWith('.webp') ||
         lower.endsWith('.gif');
+  }
+
+  String _normalizePathForCheck(String path) {
+    if (path.startsWith('http')) {
+      final uri = Uri.tryParse(path);
+      if (uri != null) {
+        return uri.path.toLowerCase();
+      }
+    }
+    return path.toLowerCase();
   }
 
   Widget _buildCover(
