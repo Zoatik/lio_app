@@ -1,0 +1,201 @@
+﻿{
+    "quizzs": [
+        {
+            "id": "quizz0",
+            "title": "Tutoriel",
+            "question": "Bienvenue",
+            "type": "text",
+            "allowAnyAnswer": true,
+            "message": "Tes premières cartes sont débloquées.",
+            "questionImages": [],
+            "reward": {
+                "folder": "medias/quizz0/"
+            },
+            "isTutorial": true
+        },
+        {
+            "id": "quizz1",
+            "title": "Quiz 1",
+            "question": "Enchanté...",
+            "type": "text",
+            "acceptedAnswers": [
+                "Débile",
+                "Débile.",
+                "Débile !",
+                "débile.",
+                "débile",
+                "débile !"
+            ],
+            "message": "C\u0027est vrai que bon...",
+            "questionImages": [],
+            "reward": {
+                "folder": "medias/quizz1/"
+            }
+        },
+        {
+            "id": "quizz2",
+            "title": "Quiz 2",
+            "question": "Que faire pour se préparer à un examen important ?",
+            "type": "multiple_choice",
+            "choices": [
+                "Réviser régulièrement",
+                "Bien dormir la veille",
+                "Manger sainement",
+                "Jeter des kegs sur Zoatik"
+            ],
+            "correctIndex": 3,
+            "message": "Exact ! (Bâtard)",
+            "questionImages": [],
+            "reward": {
+                "folder": "medias/quizz2/"
+            }
+        },
+        {
+            "id": "quizz3",
+            "title": "Quiz 3",
+            "question": "Quel est le premier principe de la thermodynamique ?",
+            "type": "text",
+            "allowAnyAnswer": true,
+            "message": "J\u0027avoue, tu pouvais dire n\u0027importe quoi...",
+            "questionImages": [
+                "quizz_images/quizz3/question1.jpg",
+                "quizz_images/quizz3/question2.jpg"
+            ],
+            "reward": {
+                "folder": "medias/quizz3/"
+            }
+        },
+        {
+            "id": "quizz4",
+            "title": "Quiz 4",
+            "question": "Combien d'année dure un bachelor en physique ?",
+            "type": "multiple_choice",
+            "choices": [
+                "2 ans",
+                "3 ans",
+                "4 ans",
+                "Durée indéterminée"
+            ],
+            "correctIndex": 3,
+            "message": "Le CDI de l'EPFL",
+            "questionImages": [],
+            "reward": {
+                "folder": "medias/quizz4/"
+            }
+        },
+        {
+            "id": "quizz5",
+            "title": "Quiz 5",
+            "question": "Comment s'appellent ces personnes ?",
+            "type": "multiple_choice",
+            "choices": [
+                "Axel, Sacha, Caryl",
+                "Sacha, Caryl, Axel",
+                "Caryl, Axel, Sacha",
+                "random.gamble(Axel, Sacha, Caryl, Noah ?)"
+            ],
+            "correctIndex": 3,
+            "message": "En vrai c'est les coupaaaings",
+            "questionImages": [
+                "quizz_images/quizz5/Axel.jpg",
+                "quizz_images/quizz5/Sacha.png",
+                "quizz_images/quizz5/Caryl.jpg"
+            ],
+            "reward": {
+                "folder": "medias/quizz5/"
+            }
+        },
+        {
+            "id": "quizz6",
+            "title": "Quiz 6",
+            "question": "Où se trouvent les affaires de Lio ?",
+            "type": "multiple_choice",
+            "choices": [
+                "Chez Lio",
+                "Dans le coffre de la voiture à Sacha",
+                "Chez Axel",
+                "Toutes les réponses à la fois"
+            ],
+            "correctIndex": 3,
+            "message": "Mah on va ouvrir une brocante bientôt",
+            "questionImages": [],
+            "reward": {
+                "folder": "medias/quizz6/"
+            }
+        },
+        {
+            "id": "quizz7",
+            "title": "Quiz 7",
+            "question": "Dans cette situation, que faire ? (indice: tu es le vélo)",
+            "type": "multiple_choice",
+            "choices": [
+                "Ne rien faire",
+                "Reculer",
+                "Contrôler l'état du coffre de la voiture",
+                "Manger le pneu du vélo"
+            ],
+            "correctIndex": 2,
+            "message": "Toujours au service des autres !",
+            "questionImages": [
+                "quizz_images/quizz7/car_bike.png"
+            ],
+            "reward": {
+                "folder": "medias/quizz7/"
+            }
+        },
+        {
+            "id": "quizz8",
+            "title": "Quiz 8",
+            "question": "Quelle est la façon correcte de tenir un téléphone ?",
+            "type": "multiple_choice",
+            "choices": [
+                "Avec les deux mains",
+                "Avec une seule main",
+                "Avec les pieds",
+                "Dans la bouche en serrant bien fort pour être sûr de ne pas le faire tomber"
+            ],
+            "correctIndex": 3,
+            "message": "Bonus : ça devient une chaufferette quand on dort dessus !",
+            "questionImages": [],
+            "reward": {
+                "folder": "medias/quizz8/"
+            }
+        },
+        {
+            "id": "quizz9",
+            "title": "Quiz 9",
+            "question": "Que faire lorsque l'on a trop chaud ?",
+            "type": "multiple_choice",
+            "choices": [
+                "Se déshabiller",
+                "S'habiller avec des vêtements légers",
+                "Retrousser son jean et profiter de la pluie",
+                "Manger son jean"
+            ],
+            "correctIndex": 2,
+            "message": "Plutôt efficace tant qu'il ne faut pas le retirer après...",
+            "questionImages": [],
+            "reward": {
+                "folder": "medias/quizz9/"
+            }
+        },
+        {
+            "id": "quizz10",
+            "title": "Quiz 10",
+            "question": "Quelle est la cuisson optimale des pâtes ?",
+            "type": "multiple_choice",
+            "choices": [
+                "al dente",
+                "al dente",
+                "Hall Dente",
+                "Quand une odeur de plastique brûlé se dégage"
+            ],
+            "correctIndex": 3,
+            "message": "Dommage que ça n'ait pas réparé la coque lol",
+            "questionImages": [],
+            "reward": {
+                "folder": "medias/quizz10/"
+            }
+        }
+    ]
+}
