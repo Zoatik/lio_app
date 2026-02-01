@@ -65,8 +65,6 @@ class _HomeScreenState extends State<HomeScreen>
   final _passController = TextEditingController();
   String? _loginError;
 
-  static const _expectedUser = 'Lionel';
-  static const _expectedPass = 'Axelaunegrosseteub';
 
   @override
   void initState() {
@@ -201,24 +199,24 @@ class _HomeScreenState extends State<HomeScreen>
                       onPressed: () {
                         final user = _userController.text.trim();
                         final pass = _passController.text;
-                        if (user == _expectedUser && pass == _expectedPass) {
+                        if (user.isEmpty || pass.isEmpty) {
                           setState(() {
-                            _loginError = null;
+                            _loginError = 'Identifiants requis.';
                           });
-                          const CredentialsStorage().save(
-                            username: user,
-                            password: pass,
-                          );
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const RegisterScreen(),
-                            ),
-                          );
-                        } else {
-                          setState(() {
-                            _loginError = 'Identifiants incorrects.';
-                          });
+                          return;
                         }
+                        setState(() {
+                          _loginError = null;
+                        });
+                        const CredentialsStorage().save(
+                          username: user,
+                          password: pass,
+                        );
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFFD54F),
