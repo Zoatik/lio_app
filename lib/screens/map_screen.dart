@@ -163,6 +163,21 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               );
             },
+            onTapCompleted: (quizz) async {
+              final full = await _loadQuizzForPlay(quizz);
+              if (!mounted) {
+                return;
+              }
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => BoosterScreen(
+                    media: full.rewardMedia,
+                    startOpened: true,
+                    onDone: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              );
+            },
             isUnlocked: _isUnlocked,
           ),
           if (_showTutorial)
@@ -321,11 +336,13 @@ class _DuolingoPath extends StatelessWidget {
     required this.progress,
     required this.onTap,
     required this.isUnlocked,
+    required this.onTapCompleted,
   });
 
   final List<Quizz> quizzs;
   final AppProgress progress;
   final ValueChanged<Quizz> onTap;
+  final ValueChanged<Quizz> onTapCompleted;
   final bool Function(int) isUnlocked;
 
   @override
@@ -371,21 +388,9 @@ class _DuolingoPath extends StatelessWidget {
                       isCompleted: isCompleted,
                       isUnlocked: unlocked,
                       onTap: unlocked
-                          ? () async {
+                          ? () {
                               if (isCompleted) {
-                                final full = await _loadQuizzForPlay(quizz);
-                                if (!context.mounted) {
-                                  return;
-                                }
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => BoosterScreen(
-                                      media: full.rewardMedia,
-                                      startOpened: true,
-                                      onDone: () => Navigator.of(context).pop(),
-                                    ),
-                                  ),
-                                );
+                                onTapCompleted(quizz);
                               } else {
                                 onTap(quizz);
                               }

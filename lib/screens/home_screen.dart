@@ -383,7 +383,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     const SizedBox(height: 8),
                     Text(
-                      'Verification de l'age',
+                      "Verification de l'age",
                       style:
                           Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 color: Colors.white,
