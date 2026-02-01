@@ -1,10 +1,14 @@
 ﻿import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 import '../models/reward_media.dart';
 import '../services/file_media_helper.dart';
 import '../services/media_cache_service.dart';
+import '../services/web_blob_url.dart';
 import '../storage/credentials_storage.dart';
 
 class MediaViewerScreen extends StatefulWidget {
@@ -18,6 +22,7 @@ class MediaViewerScreen extends StatefulWidget {
 
 class _MediaViewerScreenState extends State<MediaViewerScreen> {
   VideoPlayerController? _controller;
+  Uri? _blobUrl;
 
   @override
   void initState() {
@@ -29,6 +34,10 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
 
   @override
   void dispose() {
+    if (_blobUrl != null) {
+      revokeBlobUrl(_blobUrl!);
+      _blobUrl = null;
+    }
     _controller?.dispose();
     super.dispose();
   }
@@ -38,10 +47,33 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
     if (path.startsWith('http')) {
       try {
         final headers = const CredentialsStorage().authHeadersSync();
-        _controller = VideoPlayerController.networkUrl(
-          Uri.parse(path),
-          httpHeaders: headers,
-        );
+        if (kIsWeb) {
+          final dio = Dio();
+          final response = await dio.get<List<int>>(
+            path,
+            options: Options(
+              responseType: ResponseType.bytes,
+              headers: headers,
+            ),
+          );
+          final bytes = response.data;
+          if (bytes == null) {
+            throw Exception('Video download failed.');
+          }
+          _blobUrl = await createBlobUrlFromBytes(
+            Uint8List.fromList(bytes),
+            mimeType: 'video/mp4',
+          );
+          if (_blobUrl == null) {
+            throw Exception('Blob URL creation failed.');
+          }
+          _controller = VideoPlayerController.networkUrl(_blobUrl!);
+        } else {
+          _controller = VideoPlayerController.networkUrl(
+            Uri.parse(path),
+            httpHeaders: headers,
+          );
+        }
         await _controller!.initialize();
         if (!mounted) {
           return;
