@@ -299,9 +299,10 @@ class QuizzsRepository {
       if (!_isCoverName(file.name)) {
         continue;
       }
-      final base = file.name
+      final stripped = file.name
           .replaceAll('_cover', '')
           .replaceAll('-cover', '');
+      final base = _basenameWithoutExt(stripped);
       map['$base.mp4'] = file.url.toString();
       map['$base.mov'] = file.url.toString();
       map['$base.m4v'] = file.url.toString();
