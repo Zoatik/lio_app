@@ -10,6 +10,7 @@ import '../storage/tutorial_storage.dart';
 import 'booster_screen.dart';
 import 'inventory_screen.dart';
 import 'quiz_screen.dart';
+import '../services/media_cache_service.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -65,6 +66,7 @@ class _MapScreenState extends State<MapScreen> {
       unlockedMediaIds: unlocked,
     );
     await _storage.save(updated);
+    await MediaCacheService().prefetch(quizz.rewardMedia);
     if (!mounted) {
       return;
     }

@@ -13,7 +13,7 @@ class WebDavExamples extends StatefulWidget {
 }
 
 class _WebDavExamplesState extends State<WebDavExamples> {
-  static const baseUrl = 'https://cloud.hallie.ch';
+  static const baseUrl = 'https://lioapp.axelhal.workers.dev';
   NextcloudDavClient? _client;
   Future<NextcloudDavClient> _ensureClient() async {
     if (_client != null) {
@@ -48,7 +48,7 @@ class _WebDavExamplesState extends State<WebDavExamples> {
             height: 240,
             child: FutureBuilder<List<DavFile>>(
               future: _ensureClient()
-                  .then((client) => client.listFiles('Media/quizz_images/quizz1/')),
+                  .then((client) => client.listFiles('dav/Media/quizz_images/quizz1/')),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
@@ -86,7 +86,7 @@ class _WebDavExamplesState extends State<WebDavExamples> {
           const SizedBox(height: 12),
           FutureBuilder<List<DavFile>>(
             future:
-                _ensureClient().then((client) => client.listFiles('Media/medias/quizz1/')),
+                _ensureClient().then((client) => client.listFiles('dav/Media/medias/quizz1/')),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());

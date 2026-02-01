@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../models/reward_media.dart';
+import '../storage/credentials_storage.dart';
 import 'media_viewer_screen.dart';
 
 class BoosterScreen extends StatefulWidget {
@@ -299,19 +300,13 @@ class _BoosterCards extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         final item = media[index];
+        final headers = const CredentialsStorage().authHeadersSync();
         return ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.asset(
-                item.coverPath,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  color: Colors.black12,
-                  child: const Icon(Icons.photo, size: 40),
-                ),
-              ),
+              _buildCover(item.coverPath, headers, item.type),
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -399,6 +394,7 @@ class _CardFace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasImageCover = _isImagePath(item.coverPath);
+    final headers = const CredentialsStorage().authHeadersSync();
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
@@ -418,19 +414,7 @@ class _CardFace extends StatelessWidget {
                 child: const Icon(Icons.videocam, size: 48),
               )
             else
-              Image.asset(
-                item.coverPath,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  color: Colors.black12,
-                  child: Icon(
-                    item.type == RewardMediaType.video
-                        ? Icons.videocam
-                        : Icons.photo,
-                    size: 48,
-                  ),
-                ),
-              ),
+              _buildCover(item.coverPath, headers, item.type),
             Positioned(
               bottom: 0,
               left: 0,
@@ -454,6 +438,33 @@ class _CardFace extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _buildCover(
+  String path,
+  Map<String, String> headers,
+  RewardMediaType type,
+) {
+  final placeholder = Container(
+    color: Colors.black12,
+    child: Icon(
+      type == RewardMediaType.video ? Icons.videocam : Icons.photo,
+      size: 48,
+    ),
+  );
+  if (path.startsWith('http')) {
+    return Image.network(
+      path,
+      headers: headers,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => placeholder,
+    );
+  }
+  return Image.asset(
+    path,
+    fit: BoxFit.cover,
+    errorBuilder: (_, __, ___) => placeholder,
+  );
 }
 
 class _BurstPainter extends CustomPainter {

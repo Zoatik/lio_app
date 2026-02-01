@@ -64,6 +64,7 @@ class Quizz {
   Quizz copyWith({
     List<RewardMedia>? rewardMedia,
     bool? isTutorial,
+    List<String>? questionImages,
   }) {
     return Quizz(
       id: id,
@@ -75,7 +76,7 @@ class Quizz {
       choices: choices,
       correctIndex: correctIndex,
       acceptedAnswers: acceptedAnswers,
-      questionImages: questionImages,
+      questionImages: questionImages ?? this.questionImages,
       rewardMedia: rewardMedia ?? this.rewardMedia,
       allowAnyAnswer: allowAnyAnswer,
       isTutorial: isTutorial ?? this.isTutorial,

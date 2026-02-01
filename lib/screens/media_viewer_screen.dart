@@ -1,7 +1,11 @@
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 import '../models/reward_media.dart';
+import '../services/file_media_helper.dart';
+import '../services/media_cache_service.dart';
+import '../storage/credentials_storage.dart';
 
 class MediaViewerScreen extends StatefulWidget {
   const MediaViewerScreen({super.key, required this.media});
@@ -19,7 +23,54 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
   void initState() {
     super.initState();
     if (widget.media.type == RewardMediaType.video) {
-      _controller = VideoPlayerController.asset(widget.media.path)
+      _initVideo();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initVideo() async {
+    final path = widget.media.path;
+    if (path.startsWith('http')) {
+      try {
+        final headers = const CredentialsStorage().authHeadersSync();
+        _controller = VideoPlayerController.networkUrl(
+          Uri.parse(path),
+          httpHeaders: headers,
+        );
+        await _controller!.initialize();
+        if (!mounted) {
+          return;
+        }
+        setState(() {});
+        _controller!.play();
+        return;
+      } catch (_) {
+        // fallback below
+      }
+    }
+
+    if (!kIsWeb) {
+      final cached =
+          await MediaCacheService().getCachedPath(widget.media.id);
+      if (cached != null) {
+        _controller = getFileMediaHelper().videoControllerFromFile(cached);
+        await _controller!.initialize();
+        if (!mounted) {
+          return;
+        }
+        setState(() {});
+        _controller!.play();
+        return;
+      }
+    }
+
+    if (!path.startsWith('http')) {
+      _controller = VideoPlayerController.asset(path)
         ..initialize().then((_) {
           if (!mounted) {
             return;
@@ -28,12 +79,6 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
           _controller?.play();
         });
     }
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
   }
 
   @override
@@ -46,10 +91,7 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
       ),
       body: Center(
         child: widget.media.type == RewardMediaType.photo
-            ? Image.asset(
-                widget.media.path,
-                fit: BoxFit.contain,
-              )
+            ? _buildPhoto()
             : _buildVideo(),
       ),
       floatingActionButton: widget.media.type == RewardMediaType.video
@@ -83,6 +125,43 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
     return AspectRatio(
       aspectRatio: _controller!.value.aspectRatio,
       child: VideoPlayer(_controller!),
+    );
+  }
+
+  Widget _buildPhoto() {
+    final path = widget.media.path;
+    if (path.startsWith('http')) {
+      if (!kIsWeb) {
+        return FutureBuilder<String?>(
+          future: MediaCacheService().getCachedPath(widget.media.id),
+          builder: (context, snapshot) {
+            final cached = snapshot.data;
+            if (cached != null) {
+              return getFileMediaHelper()
+                  .imageFromFile(cached, BoxFit.contain);
+            }
+            final headers = const CredentialsStorage().authHeadersSync();
+            return Image.network(
+              path,
+              headers: headers,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+            );
+          },
+        );
+      }
+      final headers = const CredentialsStorage().authHeadersSync();
+      return Image.network(
+        path,
+        headers: headers,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+      );
+    }
+    return Image.asset(
+      path,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
     );
   }
 }

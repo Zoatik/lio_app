@@ -4,6 +4,7 @@ import '../data/quizzs_repository.dart';
 import '../models/progress.dart';
 import '../models/reward_media.dart';
 import '../storage/progress_storage.dart';
+import '../storage/credentials_storage.dart';
 import 'media_viewer_screen.dart';
 
 class InventoryScreen extends StatefulWidget {
@@ -69,6 +70,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           final item = _media[index];
           final unlocked = _progress.unlockedMediaIds.contains(item.id);
           final hasImageCover = _isImagePath(item.coverPath);
+          final authHeaders = const CredentialsStorage().authHeadersSync();
           return GestureDetector(
             onTap: unlocked
                 ? () {
@@ -91,19 +93,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         child: const Icon(Icons.videocam, size: 48),
                       )
                     else
-                      Image.asset(
-                        item.coverPath,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => Container(
-                          color: Colors.black12,
-                          child: Icon(
-                            item.type == RewardMediaType.video
-                                ? Icons.videocam
-                                : Icons.photo,
-                            size: 48,
-                          ),
-                        ),
-                      )
+                      _buildCover(item.coverPath, authHeaders, item.type)
                   else
                     Container(
                       color: Colors.grey.shade300,
@@ -147,5 +137,34 @@ class _InventoryScreenState extends State<InventoryScreen> {
         lower.endsWith('.png') ||
         lower.endsWith('.webp') ||
         lower.endsWith('.gif');
+  }
+
+  Widget _buildCover(
+    String path,
+    Map<String, String> headers,
+    RewardMediaType type,
+  ) {
+    final placeholder = Container(
+      color: Colors.black12,
+      child: Icon(
+        type == RewardMediaType.video ? Icons.videocam : Icons.photo,
+        size: 48,
+      ),
+    );
+
+    if (path.startsWith('http')) {
+      return Image.network(
+        path,
+        headers: headers,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => placeholder,
+      );
+    }
+
+    return Image.asset(
+      path,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => placeholder,
+    );
   }
 }

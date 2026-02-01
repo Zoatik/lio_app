@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/quizz.dart';
+import '../storage/credentials_storage.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({
@@ -95,15 +96,28 @@ class _QuizScreenState extends State<QuizScreen> {
                   separatorBuilder: (_, _) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
                     final path = quizz.questionImages![index];
+                    final headers =
+                        const CredentialsStorage().authHeadersSync();
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        path,
-                        width: 220,
-                        height: 180,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                      ),
+                      child: path.startsWith('http')
+                          ? Image.network(
+                              path,
+                              headers: headers,
+                              width: 220,
+                              height: 180,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox.shrink(),
+                            )
+                          : Image.asset(
+                              path,
+                              width: 220,
+                              height: 180,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox.shrink(),
+                            ),
                     );
                   },
                 ),

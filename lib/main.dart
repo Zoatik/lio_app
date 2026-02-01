@@ -6,6 +6,7 @@ import 'screens/booster_screen.dart';
 import 'storage/age_gate_storage.dart';
 import 'storage/credentials_storage.dart';
 import 'storage/progress_storage.dart';
+import 'services/media_cache_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -146,50 +147,106 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   const SizedBox(height: 30),
                   Container(
-                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 235),
-                      borderRadius: BorderRadius.circular(18),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFFFFD54F),
+                          Color(0xFF6EC6FF),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(22),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 60),
-                          blurRadius: 18,
-                          offset: const Offset(0, 10),
+                          color: Colors.black.withValues(alpha: 70),
+                          blurRadius: 20,
+                          offset: const Offset(0, 12),
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextField(
-                          controller: _userController,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Utilisateur',
-                            prefixIcon: Icon(Icons.person),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _passController,
-                          textInputAction: TextInputAction.done,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Mot de passe',
-                            prefixIcon: Icon(Icons.lock),
-                          ),
-                        ),
-                        if (_loginError != null) ...[
-                          const SizedBox(height: 10),
+                    child: Container(
+                      margin: const EdgeInsets.all(2),
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7FBFF)
+                            .withValues(alpha: 245),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                           Text(
-                            _loginError!,
-                            style: const TextStyle(
-                              color: Colors.redAccent,
-                              fontWeight: FontWeight.w600,
+                            'Connexion Cloud',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF0B1B3B),
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _userController,
+                            textInputAction: TextInputAction.next,
+                            decoration: InputDecoration(
+                              labelText: 'Utilisateur',
+                              hintText: 'Pseudo Nextcloud',
+                              prefixIcon: const Icon(Icons.person),
+                              filled: true,
+                              fillColor:
+                                  Colors.white.withValues(alpha: 235),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF1F6FEB),
+                                  width: 2,
+                                ),
+                              ),
                             ),
                           ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _passController,
+                            textInputAction: TextInputAction.done,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              labelText: 'Mot de passe',
+                              hintText: 'App password',
+                              prefixIcon: const Icon(Icons.lock),
+                              filled: true,
+                              fillColor:
+                                  Colors.white.withValues(alpha: 235),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFFFC928),
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_loginError != null) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              _loginError!,
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -296,6 +353,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ..addAll(tutorial.rewardMedia.map((media) => media.id));
     final updated = progress.copyWith(unlockedMediaIds: unlocked);
     await storage.save(updated);
+    await MediaCacheService().prefetch(tutorial.rewardMedia);
     if (!mounted) {
       return;
     }

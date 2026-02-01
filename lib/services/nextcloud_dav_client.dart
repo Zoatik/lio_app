@@ -27,6 +27,9 @@ class NextcloudDavClient {
   }
 
   Uri _rootUri() {
+    if (baseUrl.contains('workers.dev')) {
+      return Uri.parse('$baseUrl/');
+    }
     return Uri.parse('$baseUrl/remote.php/dav/files/$username/');
   }
 
