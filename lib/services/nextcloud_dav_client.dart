@@ -101,7 +101,7 @@ class NextcloudDavClient {
               ? DateTime.tryParse(lastModifiedRaw)
               : null;
 
-          final fileUrl = Uri.parse('$baseUrl$href');
+          final fileUrl = _resolveFileUrl(href);
 
           // Ignore the folder itself (first response) by comparing paths.
           if (_isSameResource(uri, fileUrl)) {
@@ -166,6 +166,18 @@ class NextcloudDavClient {
       throw Exception('Dossier introuvable (404).');
     }
     throw Exception('Erreur WebDAV: ${status ?? 'inconnue'}');
+  }
+
+  Uri _resolveFileUrl(String href) {
+    if (!baseUrl.contains('workers.dev')) {
+      return Uri.parse('$baseUrl$href');
+    }
+    final prefix = '/remote.php/dav/files/$username/';
+    if (href.startsWith(prefix)) {
+      final suffix = href.substring(prefix.length);
+      return Uri.parse('$baseUrl/dav/$suffix');
+    }
+    return Uri.parse('$baseUrl$href');
   }
 
   Future<T> _enqueue<T>(Future<T> Function() action) {
