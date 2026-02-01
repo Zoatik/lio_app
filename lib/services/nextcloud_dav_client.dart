@@ -67,36 +67,30 @@ class NextcloudDavClient {
         }
 
         final document = XmlDocument.parse(raw);
-        final responses = document.findAllElements('response').toList();
+        final responses = _findElementsByLocalName(document, 'response');
         final items = <DavFile>[];
 
         for (final node in responses) {
-          final href = node.getElement('href')?.innerText;
+          final href = _firstElementText(node, 'href');
           if (href == null) {
             continue;
           }
           final decodedHref = Uri.decodeFull(href);
-          final isCollection = node.findAllElements('collection').isNotEmpty;
+          final isCollection = _findElementsByLocalName(node, 'collection').isNotEmpty;
           if (isCollection) {
             continue;
           }
 
           final displayName =
-              node.findAllElements('displayname').firstOrNull?.innerText ??
-                  p.basename(decodedHref);
+              _firstElementText(node, 'displayname') ?? p.basename(decodedHref);
           final contentLength = int.tryParse(
-                node
-                        .findAllElements('getcontentlength')
-                        .firstOrNull
-                        ?.innerText ??
-                    '',
+                _firstElementText(node, 'getcontentlength') ?? '',
               ) ??
               0;
           final contentType =
-              node.findAllElements('getcontenttype').firstOrNull?.innerText ??
+              _firstElementText(node, 'getcontenttype') ??
                   'application/octet-stream';
-          final lastModifiedRaw =
-              node.findAllElements('getlastmodified').firstOrNull?.innerText;
+          final lastModifiedRaw = _firstElementText(node, 'getlastmodified');
           final lastModified = lastModifiedRaw != null
               ? DateTime.tryParse(lastModifiedRaw)
               : null;
@@ -199,6 +193,21 @@ class NextcloudDavClient {
         .split('/')
         .map((segment) => Uri.encodeComponent(segment))
         .join('/');
+  }
+
+  List<XmlElement> _findElementsByLocalName(XmlNode node, String name) {
+    return node
+        .findAllElements('*')
+        .where((element) => element.name.local == name)
+        .toList();
+  }
+
+  String? _firstElementText(XmlNode node, String name) {
+    final matches = _findElementsByLocalName(node, name);
+    if (matches.isEmpty) {
+      return null;
+    }
+    return matches.first.innerText;
   }
 }
 
