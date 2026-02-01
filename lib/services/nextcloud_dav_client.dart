@@ -145,10 +145,10 @@ class NextcloudDavClient {
     return fileUri.path == folderPath || fileUri.path == folderUri.path;
   }
 
-  void _throwReadable(DioException e) {
+  Never _throwReadable(DioException e) {
     final status = e.response?.statusCode;
     if (status == 401 || status == 403) {
-      throw Exception('Accès refusé (authentification invalide).');
+      throw Exception('Acces refuse (authentification invalide).');
     }
     if (status == 404) {
       throw Exception('Dossier introuvable (404).');
