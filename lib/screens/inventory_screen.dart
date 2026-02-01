@@ -29,11 +29,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Future<void> _load() async {
-    final quizzs = await _repository.load();
     final progress = await _storage.load();
+    final quizzs = await _repository.load(includeRemoteMedia: false);
     final media = <RewardMedia>[];
+    final targetIds = <String>{...progress.completedQuizzIds};
+    final tutorial = quizzs.where((q) => q.isTutorial).firstOrNull;
+    if (tutorial != null && progress.unlockedMediaIds.isNotEmpty) {
+      targetIds.add(tutorial.id);
+    }
     for (final quizz in quizzs) {
-      media.addAll(quizz.rewardMedia);
+      if (!targetIds.contains(quizz.id)) {
+        continue;
+      }
+      final full = await _repository.loadById(quizz.id);
+      media.addAll((full ?? quizz).rewardMedia);
     }
     if (!mounted) {
       return;
@@ -167,4 +176,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
       errorBuilder: (_, __, ___) => placeholder,
     );
   }
+}
+
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }

@@ -4,6 +4,8 @@ import '../data/quizzs_repository.dart';
 import '../screens/booster_screen.dart';
 import '../screens/map_screen.dart';
 import '../services/media_cache_service.dart';
+import '../services/nextcloud_config.dart';
+import '../services/nextcloud_dav_client.dart';
 import '../storage/age_gate_storage.dart';
 import '../storage/credentials_storage.dart';
 import '../storage/progress_storage.dart';
@@ -22,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen>
   final _userController = TextEditingController();
   final _passController = TextEditingController();
   String? _loginError;
+  bool _loggingIn = false;
 
   @override
   void initState() {
@@ -207,28 +210,7 @@ class _HomeScreenState extends State<HomeScreen>
                   SizedBox(
                     height: 58,
                     child: ElevatedButton(
-                      onPressed: () {
-                        final user = _userController.text.trim();
-                        final pass = _passController.text;
-                        if (user.isEmpty || pass.isEmpty) {
-                          setState(() {
-                            _loginError = 'Identifiants requis.';
-                          });
-                          return;
-                        }
-                        setState(() {
-                          _loginError = null;
-                        });
-                        const CredentialsStorage().save(
-                          username: user,
-                          password: pass,
-                        );
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
-                          ),
-                        );
-                      },
+                      onPressed: _loggingIn ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFFD54F),
                         foregroundColor: const Color(0xFF0B1B3B),
@@ -242,7 +224,13 @@ class _HomeScreenState extends State<HomeScreen>
                           letterSpacing: 1.0,
                         ),
                       ),
-                      child: const Text('START'),
+                      child: _loggingIn
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('START'),
                     ),
                   ),
                 ],
@@ -250,6 +238,55 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _handleLogin() async {
+    final user = _userController.text.trim();
+    final pass = _passController.text;
+    if (user.isEmpty || pass.isEmpty) {
+      setState(() {
+        _loginError = 'Identifiants requis.';
+      });
+      return;
+    }
+    setState(() {
+      _loginError = null;
+      _loggingIn = true;
+    });
+
+    final client = NextcloudDavClient(
+      baseUrl: nextcloudBaseUrl,
+      username: user,
+      appPassword: pass,
+    );
+    try {
+      await client.listFiles(nextcloudMediaRoot);
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _loginError = e.toString().replaceFirst('Exception: ', '');
+        _loggingIn = false;
+      });
+      return;
+    }
+
+    await const CredentialsStorage().save(
+      username: user,
+      password: pass,
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _loggingIn = false;
+    });
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const RegisterScreen(),
       ),
     );
   }
@@ -296,11 +333,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _handleSuccess() async {
     await const AgeGateStorage().setVerified(true);
-    final quizzs = await const QuizzsRepository().load();
-    final tutorial = quizzs.firstWhere(
+    const repo = QuizzsRepository();
+    final quizzs = await repo.load(includeRemoteMedia: false);
+    final baseTutorial = quizzs.firstWhere(
       (q) => q.isTutorial,
       orElse: () => quizzs.first,
     );
+    final tutorial = await repo.loadById(baseTutorial.id) ?? baseTutorial;
     final storage = const ProgressStorage();
     final progress = await storage.load();
     final unlocked = Set<String>.from(progress.unlockedMediaIds)

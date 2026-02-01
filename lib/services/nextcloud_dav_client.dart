@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -14,6 +15,9 @@ class NextcloudDavClient {
     required this.appPassword,
     Dio? dio,
   }) : _dio = dio ?? Dio();
+
+  static Future<void> _queue = Future.value();
+  static const Duration _minDelay = Duration(milliseconds: 300);
 
   final String baseUrl;
   final String username;
@@ -40,82 +44,90 @@ class NextcloudDavClient {
   }
 
   Future<List<DavFile>> listFiles(String relativePath) async {
-    final uri = buildUri(relativePath);
-    try {
-      final response = await _dio.request<String>(
-        uri.toString(),
-        data: _propfindBody,
-        options: Options(
-          method: 'PROPFIND',
-          headers: {
-            'Authorization': _authHeader,
-            'Depth': '1',
-            'Content-Type': 'application/xml',
-          },
-          responseType: ResponseType.plain,
-        ),
-      );
-
-      final raw = response.data ?? '';
-      if (raw.isEmpty) {
-        return [];
-      }
-
-      final document = XmlDocument.parse(raw);
-      final responses = document.findAllElements('response').toList();
-      final items = <DavFile>[];
-
-      for (final node in responses) {
-        final href = node.getElement('href')?.innerText;
-        if (href == null) {
-          continue;
-        }
-        final decodedHref = Uri.decodeFull(href);
-        final isCollection =
-            node.findAllElements('collection').isNotEmpty;
-        if (isCollection) {
-          continue;
-        }
-
-        final displayName =
-            node.findAllElements('displayname').firstOrNull?.innerText ??
-                p.basename(decodedHref);
-        final contentLength = int.tryParse(
-              node.findAllElements('getcontentlength').firstOrNull?.innerText ??
-                  '',
-            ) ??
-            0;
-        final contentType =
-            node.findAllElements('getcontenttype').firstOrNull?.innerText ??
-                'application/octet-stream';
-        final lastModifiedRaw =
-            node.findAllElements('getlastmodified').firstOrNull?.innerText;
-        final lastModified = lastModifiedRaw != null
-            ? DateTime.tryParse(lastModifiedRaw)
-            : null;
-
-        final fileUrl = Uri.parse('$baseUrl$href');
-
-        // Ignore the folder itself (first response) by comparing paths.
-        if (_isSameResource(uri, fileUrl)) {
-          continue;
-        }
-
-        items.add(
-          DavFile(
-            name: displayName,
-            size: contentLength,
-            mimeType: contentType,
-            lastModified: lastModified,
-            url: fileUrl,
+    return _enqueue(() async {
+      final uri = buildUri(relativePath);
+      try {
+        final response = await _dio.request<String>(
+          uri.toString(),
+          data: _propfindBody,
+          options: Options(
+            method: 'PROPFIND',
+            headers: {
+              'Authorization': _authHeader,
+              'Depth': '1',
+              'Content-Type': 'application/xml',
+            },
+            responseType: ResponseType.plain,
           ),
         );
-      }
 
-      return items;
-    } on DioException catch (e) {
-      _throwReadable(e);
-    }
+        final raw = response.data ?? '';
+        if (raw.isEmpty) {
+          return [];
+        }
+
+        final document = XmlDocument.parse(raw);
+        final responses = document.findAllElements('response').toList();
+        final items = <DavFile>[];
+
+        for (final node in responses) {
+          final href = node.getElement('href')?.innerText;
+          if (href == null) {
+            continue;
+          }
+          final decodedHref = Uri.decodeFull(href);
+          final isCollection = node.findAllElements('collection').isNotEmpty;
+          if (isCollection) {
+            continue;
+          }
+
+          final displayName =
+              node.findAllElements('displayname').firstOrNull?.innerText ??
+                  p.basename(decodedHref);
+          final contentLength = int.tryParse(
+                node
+                        .findAllElements('getcontentlength')
+                        .firstOrNull
+                        ?.innerText ??
+                    '',
+              ) ??
+              0;
+          final contentType =
+              node.findAllElements('getcontenttype').firstOrNull?.innerText ??
+                  'application/octet-stream';
+          final lastModifiedRaw =
+              node.findAllElements('getlastmodified').firstOrNull?.innerText;
+          final lastModified = lastModifiedRaw != null
+              ? DateTime.tryParse(lastModifiedRaw)
+              : null;
+
+          final fileUrl = Uri.parse('$baseUrl$href');
+
+          // Ignore the folder itself (first response) by comparing paths.
+          if (_isSameResource(uri, fileUrl)) {
+            continue;
+          }
+
+          items.add(
+            DavFile(
+              name: displayName,
+              size: contentLength,
+              mimeType: contentType,
+              lastModified: lastModified,
+              url: fileUrl,
+            ),
+          );
+        }
+
+        return items;
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 429) {
+          await Future<void>.delayed(const Duration(milliseconds: 800));
+          return await listFiles(relativePath);
+        }
+        _throwReadable(e);
+      }
+    });
   }
 
   Future<String> downloadFile(Uri fileUrl) async {
@@ -154,6 +166,20 @@ class NextcloudDavClient {
       throw Exception('Dossier introuvable (404).');
     }
     throw Exception('Erreur WebDAV: ${status ?? 'inconnue'}');
+  }
+
+  Future<T> _enqueue<T>(Future<T> Function() action) {
+    final completer = Completer<T>();
+    _queue = _queue.then((_) async {
+      await Future<void>.delayed(_minDelay);
+      try {
+        final result = await action();
+        completer.complete(result);
+      } catch (e, st) {
+        completer.completeError(e, st);
+      }
+    });
+    return completer.future;
   }
 
   String _encodePath(String input) {
