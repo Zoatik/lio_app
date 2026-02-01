@@ -12,7 +12,7 @@ import '../storage/credentials_storage.dart';
 class QuizzsRepository {
   const QuizzsRepository();
 
-  Future<List<Quizz>> load() async {
+  Future<List<Quizz>> load({bool includeRemoteMedia = true}) async {
     final raw = await rootBundle.loadString('assets/data/quizzs.json');
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
     final list = decoded['quizzs'] as List<dynamic>? ?? [];
@@ -28,6 +28,14 @@ class QuizzsRepository {
         username: user,
         appPassword: pass,
       );
+      if (!includeRemoteMedia) {
+        return quizzs
+            .map((quizz) => quizz.copyWith(
+                  questionImages:
+                      _mapQuestionImagesToRemote(quizz.questionImages ?? const []),
+                ))
+            .toList();
+      }
       final result = <Quizz>[];
       for (final quizz in quizzs) {
         try {
@@ -56,6 +64,42 @@ class QuizzsRepository {
     final manifest = await _loadAssetManifest();
     final normalized = manifest.map((path) => path.replaceAll('\\', '/')).toList();
     return quizzs.map((quizz) => _ensureRewardMedia(quizz, normalized)).toList();
+  }
+
+  Future<Quizz?> loadById(String id) async {
+    final raw = await rootBundle.loadString('assets/data/quizzs.json');
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    final list = decoded['quizzs'] as List<dynamic>? ?? [];
+    Quizz? match;
+    for (final item in list) {
+      final quizz = Quizz.fromJson(item as Map<String, dynamic>);
+      if (quizz.id == id) {
+        match = quizz;
+        break;
+      }
+    }
+    if (match == null) {
+      return null;
+    }
+
+    final creds = await const CredentialsStorage().load();
+    if (creds == null) {
+      return match;
+    }
+    final (user, pass) = creds;
+    final client = NextcloudDavClient(
+      baseUrl: nextcloudBaseUrl,
+      username: user,
+      appPassword: pass,
+    );
+    try {
+      return await _attachRemoteMedia(match, client);
+    } catch (_) {
+      return match.copyWith(
+        questionImages:
+            _mapQuestionImagesToRemote(match.questionImages ?? const []),
+      );
+    }
   }
 
   Quizz _ensureRewardMedia(

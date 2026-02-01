@@ -19,6 +19,13 @@ class CredentialsStorage {
     _cached = (username, password);
   }
 
+  Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userKey);
+    await prefs.remove(_passKey);
+    _cached = null;
+  }
+
   Future<(String, String)?> load() async {
     if (_cached != null) {
       return _cached;

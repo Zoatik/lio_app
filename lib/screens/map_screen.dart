@@ -37,7 +37,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _load() async {
-    final quizzs = await _repository.load();
+    final quizzs = await _repository.load(includeRemoteMedia: false);
     final progress = await _storage.load();
     final showTutorial = await const TutorialStorage().shouldShow();
     final showFinal = await const TutorialStorage().shouldShowFinalMessage();
@@ -82,6 +82,11 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
     await _load();
+  }
+
+  Future<Quizz> _loadQuizzForPlay(Quizz quizz) async {
+    final full = await _repository.loadById(quizz.id);
+    return full ?? quizz;
   }
 
   Future<void> _closeCongrats() async {
@@ -141,14 +146,18 @@ class _MapScreenState extends State<MapScreen> {
           _DuolingoPath(
             quizzs: _quizzs,
             progress: _progress,
-            onTap: (quizz) {
+            onTap: (quizz) async {
+              final full = await _loadQuizzForPlay(quizz);
+              if (!mounted) {
+                return;
+              }
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => QuizScreen(
-                    quizz: quizz,
+                    quizz: full,
                     onCompleted: () {
                       Navigator.of(context).pop();
-                      _completeQuizz(quizz);
+                      _completeQuizz(full);
                     },
                   ),
                 ),
@@ -362,12 +371,16 @@ class _DuolingoPath extends StatelessWidget {
                       isCompleted: isCompleted,
                       isUnlocked: unlocked,
                       onTap: unlocked
-                          ? () {
+                          ? () async {
                               if (isCompleted) {
+                                final full = await _loadQuizzForPlay(quizz);
+                                if (!context.mounted) {
+                                  return;
+                                }
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) => BoosterScreen(
-                                      media: quizz.rewardMedia,
+                                      media: full.rewardMedia,
                                       startOpened: true,
                                       onDone: () => Navigator.of(context).pop(),
                                     ),
